@@ -22,7 +22,9 @@
     "url": "https://github.com/ex-git/blogAPIMongoose/issues"
   },
   "homepage": "https://github.com/ex-git/blogAPIMongoose#readme",
-  "devDependencies": {
-  },
-  "dependencies": {}
+  "devDependencies": {},
+  "dependencies": {
+    "express": "^4.16.4",
+    "mongoose": "^5.3.12"
+  }
 }
