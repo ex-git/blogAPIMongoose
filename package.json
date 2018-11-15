@@ -1,0 +1,28 @@
+{
+  "name": "blogapimogoose",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ex-git/blogAPIMongoose.git"
+  },
+  "keywords": [
+    "Mongoose",
+    "Node",
+    "Express",
+    "MongoDB"
+  ],
+  "author": "Evan Xu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ex-git/blogAPIMongoose/issues"
+  },
+  "homepage": "https://github.com/ex-git/blogAPIMongoose#readme",
+  "devDependencies": {
+  },
+  "dependencies": {}
+}
