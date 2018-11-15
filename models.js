@@ -2,14 +2,27 @@
 
 const mongoose = require("mongoose")
 
+const authorSchema = mongoose.Schema({
+    author: {
+        firstName:{type:String, required: true},
+        lastName:{type:String, required: true},
+        userName:{type: String, required: true}
+    }
+})
+
 const postSchema = mongoose.Schema({
     title: {type: String, required: true},
     content: {type: String, required: true},
-    author: {
-        firstName: {type: String, required: true},
-        lastName: {type: String, required: true}
-    },
+    author: {type: mongoose.Schema.Types.ObjectId, ref: "Author"},
     publishDate: {type: Date, required: false}
+})
+
+postSchema.pre("find", function() {
+    this.populate("author");
+})
+
+postSchema.pre("findOne", function() {
+    this.populate("author");
 })
 
 postSchema.virtual("authorFullName").get(function(){
@@ -33,6 +46,7 @@ postSchema.methods.cleanResponse = function () {
     }
 }
 
-const Posts = mongoose.model("Posts", postSchema)
+const Posts = mongoose.model("Post", postSchema)
+const Authors = mongoose.model("Author", authorSchema)
 
 module.exports = {Posts}

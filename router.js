@@ -63,7 +63,6 @@ router.put("/:id",(req,res)=>{
         requiredFields.forEach(field=>{
             updatePost[field] = req.body[field]
         })
-        console.log(updatePost)
         Posts.findByIdAndUpdate(req.params.id, {$set: updatePost})
         .then(post=> res.status(204).json({post: post.cleanResponse}))
         .catch(err=>console.error(err))
