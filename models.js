@@ -3,26 +3,31 @@
 const mongoose = require("mongoose")
 
 const authorSchema = mongoose.Schema({
-    author: {
-        firstName:{type:String, required: true},
-        lastName:{type:String, required: true},
-        userName:{type: String, required: true}
-    }
+        firstName:String,
+        lastName:String,
+        userName:{type: String, unique: true}
+})
+
+const commentSchema = mongoose.Schema({
+    comment: String
 })
 
 const postSchema = mongoose.Schema({
     title: {type: String, required: true},
     content: {type: String, required: true},
     author: {type: mongoose.Schema.Types.ObjectId, ref: "Author"},
-    publishDate: {type: Date, required: false}
+    publishDate: {type: Date, required: false},
+    comments: [commentSchema]
 })
 
-postSchema.pre("find", function() {
+postSchema.pre("find", function(next) {
     this.populate("author");
+    next()
 })
 
-postSchema.pre("findOne", function() {
+postSchema.pre("findOne", function(next) {
     this.populate("author");
+    next()
 })
 
 postSchema.virtual("authorFullName").get(function(){
@@ -42,11 +47,12 @@ postSchema.methods.cleanResponse = function () {
         title: this.title,
         content: this.content,
         author: this.authorFullName,
-        publishDate: this.pubishDateReformated
+        publishDate: this.pubishDateReformated,
+        comments: this.comments
     }
 }
 
 const Posts = mongoose.model("Post", postSchema)
 const Authors = mongoose.model("Author", authorSchema)
 
-module.exports = {Posts}
+module.exports = {Posts, Authors}

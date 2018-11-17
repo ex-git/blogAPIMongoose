@@ -1,16 +1,15 @@
 'use strict'
 
 const express = require("express");
-const router = express.Router();
+const postsRouter = express.Router();
+const {Posts, Authors} = require("./models");
 
-const {Posts} = require("./models");
-
-router.get("/", (req, res)=> {
+postsRouter.get("/", (req, res)=> {
     Posts.find()
     .then(posts => {
-        res.status(200).json({
-            posts: posts.map(post=>post.cleanResponse())
-        })
+        res.status(200).json(
+            posts.map(post=>post.cleanResponse())
+        )
     })
     .catch(err => {
         console.error(err);
@@ -18,7 +17,7 @@ router.get("/", (req, res)=> {
     })
 })
 
-router.get("/:id", (req,res) =>{
+postsRouter.get("/:id", (req,res) =>{
     Posts.findById(req.params.id)
     .then(post => {
         res.status(200).json({post: post.cleanResponse()})
@@ -29,31 +28,40 @@ router.get("/:id", (req,res) =>{
 })
 })
 
-router.post("/", (req,res)=>{
-    const requiredFields = ["title","content","author"]
+postsRouter.post("/", (req,res)=>{
+    const requiredFields = ["title","content","author_id"]
     for (let field of requiredFields) {
         if (!(field in req.body)) {
             res.status(400).send(`${field} is missing in post body`)
         }
     }
+    Authors.findById(req.body.author_id)
+    .then(author => {
     Posts.create({
-        title : req.body.title,
-        content : req.body.content,
-        author: req.body.author,
-        publishDate : req.body.publishDate || new Date()
+        "title" : req.body.title,
+        "content" : req.body.content,
+        "author": author._id,
+        "publishDate" : req.body.publishDate || new Date()
     })
     .then(post=>{
-        res.status(201).json({post: post.cleanResponse()})
+        res.status(201).json({post: {
+            title: post.title,
+            content: post.content,
+            author: post.author,
+            "publish Date" : post.publishDate
+        }})
     })
     .catch(err=> {
         console.error(err);
         res.status(500).json({message: "Internal server error"})
+    })})
+    .catch(err=> {
+        res.status(400).json({"message": "author id not found"})
     })
 })
 
-
-router.put("/:id",(req,res)=>{
-    const requiredFields = ["id","title","content","author"];
+postsRouter.put("/:id",(req,res)=>{
+    const requiredFields = ["id","title","content"];
     for (let field of requiredFields) {
         if (!(field in req.body)) {
             res.status(400).send(`${field} is missing in post body`)
@@ -64,7 +72,11 @@ router.put("/:id",(req,res)=>{
             updatePost[field] = req.body[field]
         })
         Posts.findByIdAndUpdate(req.params.id, {$set: updatePost})
-        .then(post=> res.status(204).json({post: post.cleanResponse}))
+        .then(post=> res.status(200).json({post: {
+            id: post._id,
+            title: post.title,
+            content: post.content
+        }}))
         .catch(err=>console.error(err))
     }
     else {
@@ -73,7 +85,7 @@ router.put("/:id",(req,res)=>{
     }
 })
 
-router.delete("/:id", (req,res)=>{
+postsRouter.delete("/:id", (req,res)=>{
     Posts.findByIdAndRemove(req.params.id)
     .then(post=> res.status(204).end())
     .catch(err=> {
@@ -82,4 +94,4 @@ router.delete("/:id", (req,res)=>{
 })})
 
 
-module.exports = router
+module.exports = postsRouter

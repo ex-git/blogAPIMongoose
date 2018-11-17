@@ -8,7 +8,8 @@ mongoose.Promise = global.Promise;
 const app = express();
 app.use(express.json())
 
-const router = require("./router")
+const postsRouter = require("./postsRouter")
+const authorsRouter = require("./authorsRouter")
 
 //server start and stop control
 
@@ -49,10 +50,10 @@ if (require.main === module) {
     startServer(DATABASE_URL).catch(error=>console.error(error))
 }
 
-app.use("/posts", router)
-
+app.use("/posts", postsRouter);
+app.use("/author", authorsRouter);
 app.use("*", (req,res)=>{
     res.status(404).json({"message": "Not found"})
 })
 
-module.exports = {app,startServer, stopServer}
+module.exports = {app, startServer, stopServer}
