@@ -148,6 +148,11 @@ describe("Test Author CRUD", function() {
                 })
                 .then(function(_res){
                     expect(_res).to.be.null
+                    return Posts.find({author: targetAuthor._id})
+                })
+                .then(function(res_post){
+                    console.info(res_post)
+                    expect(res_post).to.be.empty
                 })
             })
         })
