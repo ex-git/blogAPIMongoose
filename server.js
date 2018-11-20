@@ -48,7 +48,7 @@ function stopServer() {
 
 
 if (require.main === module) {
-    startServer(DATABASE_URL).catch(error=>console.error(error))
+    startServer(TEST_DATABASE_URL).catch(error=>console.error(error))
 }
 
 app.use("/posts", postsRouter);

@@ -16,16 +16,20 @@ const {DATABASE_URL, TEST_DATABASE_URL} = require("../config")
 const {Posts, Authors} = require("../models")
 
 //generate fake posts
-function seedPostsData() {
+function seedPostsData(num=5) {
     console.info('seeding posts data');
-    const seedPosts = []
-    for (let i =0; i <10; i++) {
+    seedAuthorsData(num).then(function(){
+    for (let i =0; i <num; i++) {
         let post = generatePost();
-        post.author = Authors.findOne({})._id
-        seedPosts.push(post)
-        console.info(post)
+        //get a random number
+        let skipNum = Math.floor(Math.random() * num)
+        Authors.findOne({}).skip(skipNum).then(function(author){
+            post.author = author._id
+            Posts.create(post)
+            }
+        )
     }
-    return Posts.insertMany(seedPosts)
+})
 }
 
 function generatePost() {
@@ -46,18 +50,18 @@ function generateAuthor() {
     return author
 }
 
-//add 10 authors to the test database
-function seedAuthorsData() {
+//add n authors to the test database
+function seedAuthorsData(num=5) {
     console.info("seeding authors data")
     const seedAuthors = [];
-    for (let i=0; i<10; i++) {
+    for (let i=0; i<num; i++) {
         seedAuthors.push(generateAuthor())
     }
     return Authors.insertMany(seedAuthors)
 }
 
 function dropDb() {
-    console.info('dropping test database')
+    console.warn('dropping test database')
     return mongoose.connection.dropDatabase();
 }
 
@@ -69,10 +73,10 @@ describe("Test Author CRUD", function() {
         return stopServer()
     })
     beforeEach(function() {
-        return seedAuthorsData()
+        return seedPostsData(2)
     })
     afterEach(function(){
-        return dropDb()
+        // return dropDb()
     })
     describe("author GET endpoint", function() {
         it("Shoul return author info when query with author ID", function() {
@@ -152,29 +156,109 @@ describe("Test Author CRUD", function() {
 
 describe("posts CRUD test", function(){
     before(function() {
-        return startServer(TEST_DATABASE_URL).then(seedAuthorsData())
+        return startServer(TEST_DATABASE_URL)
+    })
+    beforeEach(function(){  
+        return seedPostsData(2)
+    })
+
+    afterEach(function() {
+        // return dropDb()
     })
     after(function(){
         return stopServer()
-    })
-    beforeEach(function(){
-        seedAuthorsData()
-        return seedPostsData()
-    })
-    afterEach(function() {
-        // return dropDb()
     })
     describe("posts GET endpoint", function(){
         it("should return posts on GET", function(){
             return chai.request(app)
             .get("/posts")
             .then(function(res){
+                const requiredFields = ["id", "title", "content", "author", "comments", "publishDate"]
+                // console.log(res.body)
                 expect(res).to.be.json;
                 expect(res).to.have.status(200);
-                expect(res.body).to.be.a("array")
-                expect(res.body.length).to.be.equal(10)
+                expect(res.body).to.be.a("array");
+                // expect(res.body.length).to.be.equal(8);
+                res.body.forEach(function(post){
+                    expect(post).to.include.keys(requiredFields)
+                })
+            })
+        })
+        it("should return single post on GET with ID", function() {
+            return Posts.findOne({})
+            .then(function(res_post) {
+                return chai.request(app)
+                .get(`/posts/${res_post._id}`)
+                .then(function(res){
+                    const requiredFields = ["id", "title", "content", "author", "comments", "publishDate"]
+                    expect(res).to.be.json;
+                    expect(res).to.have.status(200);
+                    expect(res.body.post).to.include.keys(requiredFields);
+                    expect(res.body.post.id).to.equal(`${res_post._id}`)
+                })
+            })
+            
+        })
+    })
+    describe("posts PUT endpoint", function() {
+        it("should return post content with PUT and ID", function() {
+            return Posts.findOne({})
+            .then(function(post) {
+                return chai.request(app)
+                .put(`/posts/${post._id}`)
+                .send({id:post._id,
+                title: faker.hacker.phrase(),
+                content: faker.lorem.paragraph()
+                })
+                .then(function(res) {
+                    const requiredFields = ["id", "title", "content"]
+                    expect(res).to.be.json;
+                    expect(res).to.have.status(200);
+                    expect(res.body.post).to.include.keys(requiredFields);
+                    expect(res.body.post.id).to.equal(`${post._id}`)
+                })
             })
         })
     })
-    
+    describe("posts POST endpoint", function(){
+        it("should return new post with POST", function(){
+            const testPost = generatePost()
+            return Authors.findOne({})
+            .then(function(author){
+                testPost.author_id = author._id;
+                return chai.request(app)
+                .post("/posts")
+                .send(testPost)
+                .then(function(res){
+                    const requiredFields = ["title", "content", "author", "publish Date"]
+                    expect(res).to.be.json;
+                    expect(res).to.have.status(201);
+                    expect(res.body.post).to.include.keys(requiredFields);
+                    // expect(res.body.post.id).to.equal(`${post._id}`)
+                })
+            })
+        })
+    })
+    describe("delete POST endpoint", function(){
+        it("should return empty and delete POST", function(){
+            let res_2nd
+            return Posts.findOne()
+            .then(function(res_post){
+                res_2nd = res_post
+                return chai.request(app)
+                .delete(`/posts/${res_post._id}`)
+                .then(function(res){
+                    expect(res).to.have.status(204)
+                    expect(res.body).to.be.empty
+                })
+            })
+            .then(function() {
+                return Posts.findById(res_2nd._id)
+                .then(function(res){
+                    expect(res).to.be.null
+                }
+                )}
+            )
+        })
+    })
 })

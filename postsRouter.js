@@ -40,7 +40,7 @@ postsRouter.post("/", (req,res)=>{
     Posts.create({
         "title" : req.body.title,
         "content" : req.body.content,
-        "author": author._id,
+        "author": req.body.author_id,
         "publishDate" : req.body.publishDate || new Date()
     })
     .then(post=>{
