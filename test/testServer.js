@@ -18,17 +18,21 @@ const {Posts, Authors} = require("../models")
 //generate fake posts
 function seedPostsData(num=5) {
     console.info('seeding posts data');
-    seedAuthorsData(num).then(function(){
-    for (let i =0; i <num; i++) {
-        let post = generatePost();
-        //get a random number
-        let skipNum = Math.floor(Math.random() * num)
-        Authors.findOne({}).skip(skipNum).then(function(author){
-            post.author = author._id
+    seedAuthorsData(num).then(function(authors){
+        
+        for (let i =0; i <num; i++) {
+            let post = generatePost();
+            //get a random number
+            // let skipNum = Math.floor(Math.random() * num)
+            // Authors.findOne({}).skip(skipNum).then(function(author){
+            //     post.author = author._id
+            //     Posts.create(post)
+            //     }
+            // )
+            post.author = authors[i]._id
+            console.info(post)
             Posts.create(post)
-            }
-        )
-    }
+        }
 })
 }
 
@@ -61,8 +65,14 @@ function seedAuthorsData(num=5) {
 }
 
 function dropDb() {
-    console.warn('dropping test database')
-    return mongoose.connection.dropDatabase();
+    // console.warn('dropping test database')
+    // return mongoose.connection.dropDatabase();
+    return new Promise((resolve, reject) => {
+        console.warn('Deleting database');
+        mongoose.connection.dropDatabase()
+          .then(result => resolve(result))
+          .catch(err => reject(err));
+      });
 }
 
 describe("Test Author CRUD", function() {
@@ -76,7 +86,7 @@ describe("Test Author CRUD", function() {
         return seedPostsData(2)
     })
     afterEach(function(){
-        // return dropDb()
+        return dropDb()
     })
     describe("author GET endpoint", function() {
         it("Shoul return author info when query with author ID", function() {
@@ -168,7 +178,7 @@ describe("posts CRUD test", function(){
     })
 
     afterEach(function() {
-        // return dropDb()
+        return dropDb()
     })
     after(function(){
         return stopServer()
